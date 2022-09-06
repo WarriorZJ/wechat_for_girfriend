@@ -196,7 +196,7 @@ def get_goodnight_words():
 #获取当前时间
 def get_weekday():
     #日期时间
-    date=(datetime.now()+timedelta()).strftime("%Y-%m-%d %X")
+    date=(datetime.now()+timedelta(hours=8)).strftime("%Y-%m-%d %X")
     #农历日期
     nongli_date=zhdate.ZhDate.from_datetime(datetime.now()+timedelta(hours=8))
     #星期
@@ -327,7 +327,7 @@ else:
   sid="[温度不高不低，但也要注意及时补水哦]"
 
 #提醒吃饭
-now_time=int(time.localtime().tm_hour)
+now_time=int(time.localtime().tm_hour)+8
 print(now_time)
 if 9 > now_time > 0:
     eat = get_eatmorning_words()
