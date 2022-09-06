@@ -327,7 +327,7 @@ else:
   sid="[温度不高不低，但也要注意及时补水哦]"
 
 #提醒吃饭
-now_time=int(time.localtime().tm_hour)+8
+now_time=int(time.localtime().tm_hour)
 print(now_time)
 if 9 > now_time > 0:
     eat = get_eatmorning_words()
