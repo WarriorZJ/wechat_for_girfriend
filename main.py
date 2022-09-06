@@ -328,7 +328,7 @@ else:
 
 #提醒吃饭
 now_time=int(time.localtime().tm_hour)
-# print(now_time)
+print(now_time)
 if 9 > now_time > 0:
     eat = get_eatmorning_words()
     m_n_a = "[ 早安！宝 ]"
