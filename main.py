@@ -196,7 +196,7 @@ def get_goodnight_words():
 #获取当前时间
 def get_weekday():
     #日期时间
-    date=(datetime.now()+timedelta()).strftime("%Y-%m-%d %X")
+    date=(datetime.now()+timedelta(hours=8)).strftime("%Y-%m-%d %X")
     #农历日期
     nongli_date=zhdate.ZhDate.from_datetime(datetime.now()+timedelta(hours=8))
     #星期
