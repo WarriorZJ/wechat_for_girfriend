@@ -11,8 +11,6 @@ from bs4 import BeautifulSoup
 from wechatpy import WeChatClient
 from wechatpy.client.api import WeChatMessage
 
-from logs import logger
-
 """
 1、从配置文件中获取变量
 """
