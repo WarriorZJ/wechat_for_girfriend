@@ -279,36 +279,36 @@ def top_mv():
     # 2 发起http请求
     spond = requests.get(url, headers=header)
     res_text = spond.text
+
     # 3 内容解析
     soup = BeautifulSoup(res_text, "html.parser")
     soup1 = soup.find_all(width="75")  # 解析出电影名称
-    # print(soup1[0]['alt'])
     soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
-    # print(soup2[0].text)
-    # 4数据的处理
 
-    """简单处理1，输入数值N，返回排第N的电影名及评分"""
-
-    """处理2，将电影名和评分组成[{电影名：评分},{:}]的形式"""
     list_name = []  # 将电影名做成一个列表
-    for i in range(10):
-        list_name.append(soup1[i]['alt'])
+    for i in range(min(10, len(soup1))):  # 仅取前 10 个，避免超出范围
+        if 'alt' in soup1[i].attrs:  # 确保 'alt' 属性存在
+            list_name.append(soup1[i]['alt'])
 
     list_value = []  # 将评分值做成一个列表
-    try:
-        for i in range(10):
-            list_value.append(soup2[i].text)
-    except Exception as E:
-        print(E)
+    for i in range(min(10, len(soup2))):  # 仅取前 10 个，避免超出范围
+        list_value.append(soup2[i].text)
 
-    dict_name_value = dict(zip(list_name, list_value))  # 将两个list转化为字典dict
+    # 检查数据的有效性
+    if len(list_name) != len(list_value):
+        print("数据长度不一致，可能有缺失的数据")
+        return []
 
-    mv_top = sorted(dict_name_value.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)  # 字典排序,type==list
+    dict_name_value = dict(zip(list_name, list_value))  # 将电影名和评分配对成字典
 
+    # 排序：按评分倒序，如果评分相同则按电影名称字母排序
+    mv_top = sorted(dict_name_value.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+
+    # 输出前 1 个电影
     show = ''
-    for i in range(0, 1):
-        mv_top_name = mv_top[i][0]  # 取出电影名,后期直接使用
-        mv_top_value = mv_top[i][1]  # 取出评分，后期直接使用
+    if mv_top:
+        mv_top_name = mv_top[0][0]  # 获取电影名
+        mv_top_value = mv_top[0][1]  # 获取评分
         show = str(mv_top_name) + ":" + str(mv_top_value) + "分"
 
     return show
