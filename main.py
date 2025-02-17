@@ -250,7 +250,7 @@ def get_goodnight_words():
 def get_weekday():
     weekd = ''
     # 日期时间
-    date = (datetime.now() + timedelta()).strftime("%Y-%m-%d %X")
+    date = (datetime.now() + timedelta(hours=8)).strftime("%Y-%m-%d %X")
     # 农历日期
     now = str(datetime.now().strftime('%Y-%m-%d')).split("-")
     year, month, day = int(now[0]), int(now[1]), int(now[2])
@@ -422,7 +422,7 @@ else:
     sid = "温度不高不低，但也要注意及时补水哦"
 
 # 提醒吃饭
-now_time = int(time.localtime().tm_hour)
+now_time = (int(datetime.now().strftime("%H")) + 8) % 24  # 使用 % 24 确保小时在 0-23 范围内
 eat = ""
 m_n_a = ""
 if 9 > now_time > 0:
