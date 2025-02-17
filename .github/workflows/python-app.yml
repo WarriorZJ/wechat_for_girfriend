@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    - cron: 0 */3 * * * 
+    - cron: '15 18 * * *'  # 每天 18:10 UTC（相当于北京时间 2:10）
   
 
 permissions:
