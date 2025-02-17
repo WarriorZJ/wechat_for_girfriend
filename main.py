@@ -11,8 +11,6 @@ from bs4 import BeautifulSoup
 from wechatpy import WeChatClient
 from wechatpy.client.api import WeChatMessage
 
-from logs import logger
-
 """
 1、从配置文件中获取变量
 """
@@ -476,21 +474,5 @@ wm = WeChatMessage(client)
 # 参数 接收对象、消息模板ID、数据（消息模板里面的的变量与字典数据做匹配）
 for i in range(0, len(user_id1)):
     res = wm.send_template(user_id1[i], template_id, data)
-    logger.info(f"\n消息已推送至ID为{user_id1[i]}的微信用户，推送内容如下：\n"
-                f"  {data['m_n_a']['value']}\n"
-                f"  {data['eat']['value']}\n"
-                f"  所在城市：{data['city1']['value']}\n"
-                f"  当前时间：{data['daytime']['value'].split('农历')[0].strip()}\n"
-                f"  农历{data['daytime']['value'].split('农历')[1].strip()}\n"
-                f"  今日天气：{data['weather1']['value']}\n"
-                f"  当前温度：{data['temperature1']['value']}\n"
-                f"  {data['sid']['value']}\n"
-                f"  距离元旦还有{data['yd']['value']}天\n"
-                f"  距离春节还有{data['cj']['value']}天\n"
-                # f"  我们已经在一起{data['love_days']['value']}天啦\n"
-                f"  ===家乡:{data['city2']['value']} 天气:{data['weather2']['value'], data['temperature2']['value']}===\n"
-                f"  今日评分最高电影：{data['mv']['value']}\n"
-                f"  每日一句：{data['words']['value'].strip()}\n"
-                f"消息发送情况：{res['errmsg']}，此消息执行ID：{res['msgid']}")
     # 打印消息发送情况
     print(res)
