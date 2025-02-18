@@ -1,10 +1,8 @@
 import configparser
 import os
 import random
-import time
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
-import math
 import requests
 import zhdate
 from bs4 import BeautifulSoup
@@ -17,7 +15,6 @@ from wechatpy.client.api import WeChatMessage
 conf = configparser.ConfigParser()
 config_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 conf.read('config.conf', 'utf8')
-today = datetime.now() + timedelta() + timedelta()
 start_date = conf.get("info", "start_date")  # 在一起开始日期,格式 ****-**-**
 city1 = conf.get("info", "city1")  # 所在的城市(请写具体城市，如昆明)，用于匹配天气预报和热点新闻
 city2 = conf.get("info", "city2")
@@ -28,11 +25,12 @@ app_secret = conf.get("info", "app_secret")  # 微信测试号密钥（开通以
 template_id = conf.get("info", "template_id")
 # 接收消息的用户ID，让你的女朋友扫微信测试号的二维码，获取微信用户ID
 user_id = conf.get("info", "user_id")  # 接收消息的微信号，注意这个不是普通微信号，需要扫微信测试号后台的二维码来获取
+yd = conf.get("info", "yd")
+sp = conf.get("info", "sp")
 user_id1 = user_id.split(",")
 
 """
 2、定义获取数据的函数
-
 """
 
 
@@ -157,33 +155,61 @@ def get_goodnight_words():
 
     return list[random.randint(0, len(list) - 1)]
 
-# 获取当前时间
+
+def get_beijing_time():
+    return datetime.now() + timedelta(hours=8)
+
+
+# 自定义函数：将数字转换为中文
+def number_to_chinese(num):
+    chinese_digits = {
+        '0': '零', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五',
+        '6': '六', '7': '七', '8': '八', '9': '九'
+    }
+    return ''.join(chinese_digits[digit] for digit in str(num))
+
+
+# 自定义函数：将农历日期转换为中文格式
+def convert_date_to_chinese(nongli_date):
+    year_chinese = number_to_chinese(nongli_date.lunar_year)
+    month_chinese = number_to_chinese(nongli_date.lunar_month)
+    day_chinese = number_to_chinese(nongli_date.lunar_day)
+
+    # 根据农历月份的特殊情况，处理正月和腊月
+    month_chinese = '正月' if month_chinese == '一' else month_chinese
+    month_chinese = '腊月' if month_chinese == '十二' else month_chinese
+    day_chinese = str(day_chinese).replace('二', '廿') if day_chinese[0] == '二' else day_chinese
+
+    return f"{year_chinese}年{month_chinese}{day_chinese}"
+
+
 def get_weekday():
     weekd = ''
     # 日期时间
-    date = (datetime.now() + timedelta(hours=8)).strftime("%Y-%m-%d %X")
+    date = (get_beijing_time()).strftime("%Y-%m-%d %X")
     # 农历日期
     now = str(datetime.now().strftime('%Y-%m-%d')).split("-")
     year, month, day = int(now[0]), int(now[1]), int(now[2])
     nongli_date = zhdate.ZhDate.from_datetime(datetime(year, month, day) + timedelta())
-    # nongli_date = zhdate.ZhDate.from_datetime(datetime.now() + timedelta()) 老版代码不予使用
+    # 获取农历日期的中文大写格式
+    nongli_date_chinese = convert_date_to_chinese(nongli_date)
     # 星期fgv
-    dayOfWeek = (datetime.now() + timedelta()).weekday()
+    dayOfWeek = (get_beijing_time()).weekday()
     if dayOfWeek == 0:
-        weekd = date + "  星期一\n" + str(nongli_date)
+        weekd = date + "  星期一"
     if dayOfWeek == 1:
-        weekd = date + "  星期二\n" + str(nongli_date)
+        weekd = date + "  星期二"
     if dayOfWeek == 2:
-        weekd = date + "  星期三\n" + str(nongli_date)
+        weekd = date + "  星期三"
     if dayOfWeek == 3:
-        weekd = date + "  星期四\n" + str(nongli_date)
+        weekd = date + "  星期四"
     if dayOfWeek == 4:
-        weekd = date + "  星期五\n" + str(nongli_date)
+        weekd = date + "  星期五"
     if dayOfWeek == 5:
-        weekd = date + "  星期六\n" + str(nongli_date)
+        weekd = date + "  星期六"
     if dayOfWeek == 6:
-        weekd = date + "  星期日\n" + str(nongli_date)
-    return weekd
+        weekd = date + "  星期日"
+    return weekd, nongli_date_chinese
 
 
 # 获取天气
@@ -211,38 +237,44 @@ def get_weather(city, api_key='7c75b7045984a1ffc81b7bf751b783c1'):
 
 # 计算在一起的日期
 def get_count():
-    delta = today - datetime.strptime(start_date, "%Y-%m-%d")
+    delta = get_beijing_time() - datetime.strptime(start_date, "%Y-%m-%d")
     return delta.days
 
 
 # 计算距离下一次生日多少天
 def get_birthday(birthday):
-    next = datetime.strptime(str(date.today().year) + "-" + birthday, "%Y-%m-%d")
-    if next < datetime.now() + timedelta():
-        next = next.replace(year=next.year + 1)
-    return (next - today).days
+    today = get_beijing_time().date()  # 获取当前北京时间的日期
+    next_birthday = datetime.strptime(str(today.year) + "-" + birthday, "%Y-%m-%d")
+
+    # 如果生日已经过了，则计算明年的生日
+    if next_birthday < get_beijing_time():
+        next_birthday = next_birthday.replace(year=next_birthday.year + 1)
+
+    days_until_birthday = (next_birthday.date() - today).days  # 计算距离生日的天数
+    return days_until_birthday
 
 
 # 计算到元旦、春节的日期
 def get_spr(yd, sp):
-    next1 = datetime.strptime(str(date.today().year) + "-" + yd, "%Y-%m-%d")
-    if next1 < datetime.now() + timedelta():
+    today = get_beijing_time().date()  # 使用北京时间的当前日期
+
+    # 计算元旦的日期
+    next1 = datetime.strptime(str(today.year) + "-" + yd, "%Y-%m-%d")
+    if next1 < get_beijing_time():
         next1 = next1.replace(year=next1.year + 1)
-        j_yd = (next1 - today).days
+        j_yd = (next1.date() - today).days  # 计算元旦距离今天的天数
     else:
-        j_yd = (next1 - today).days
+        j_yd = (next1.date() - today).days  # 计算元旦距离今天的天数
 
-    next2 = datetime.strptime(str(date.today().year) + "-" + sp, "%Y-%m-%d")
-    if next2 < datetime.now() + timedelta():
+    # 计算春节的日期
+    next2 = datetime.strptime(str(today.year) + "-" + sp, "%Y-%m-%d")
+    if next2 < get_beijing_time():
         next2 = next2.replace(year=next2.year + 1)
-        j_cj = (next2 - today).days
+        j_cj = (next2.date() - today).days  # 计算春节距离今天的天数
     else:
-        # 2023年2月10日解除注释
-        # j_cj = (next2 - today).days
-
-        # 2023年2月10日将下列代码注释掉
         next2 = next2.replace(year=next2.year + 1)
-        j_cj = (next2 - today).days
+        j_cj = (next2.date() - today).days  # 计算春节距离今天的天数
+
     return j_yd, j_cj
 
 
@@ -269,49 +301,80 @@ def get_random_color():
 
 # 电影
 def top_mv():
-    # 1 爬取源
-    url = "https://movie.douban.com/chart"
+    # 1. 爬取源
+    url = "https://movie.douban.com/chart"  # 豆瓣新片榜的 URL
     header = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/90.0.4430.93 Safari/537.36 "
+                      "Chrome/90.0.4430.93 Safari/537.36"
     }
 
-    # 2 发起http请求
+    # 2. 发起 HTTP 请求
     spond = requests.get(url, headers=header)
     res_text = spond.text
 
-    # 3 内容解析
+    # 3. 内容解析
     soup = BeautifulSoup(res_text, "html.parser")
     soup1 = soup.find_all(width="75")  # 解析出电影名称
     soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
 
-    list_name = []  # 将电影名做成一个列表
-    for i in range(min(10, len(soup1))):  # 仅取前 10 个，避免超出范围
-        if 'alt' in soup1[i].attrs:  # 确保 'alt' 属性存在
-            list_name.append(soup1[i]['alt'])
+    # 4. 获取第一部电影及其评分
+    if soup1 and soup2:
+        movie_name = soup1[0].get('alt')  # 获取第一部电影名称
+        rating = soup2[0].text.strip()  # 获取第一部电影评分
 
-    list_value = []  # 将评分值做成一个列表
-    for i in range(min(10, len(soup2))):  # 仅取前 10 个，避免超出范围
-        list_value.append(soup2[i].text)
+        # 格式化输出
+        if movie_name and rating:
+            return f"《{movie_name}》 {rating} 分"
+        else:
+            return "获取电影信息失败"
+    else:
+        return "无法解析电影榜单"
 
-    # 检查数据的有效性
-    if len(list_name) != len(list_value):
-        print("数据长度不一致，可能有缺失的数据")
-        return []
 
-    dict_name_value = dict(zip(list_name, list_value))  # 将电影名和评分配对成字典
-
-    # 排序：按评分倒序，如果评分相同则按电影名称字母排序
-    mv_top = sorted(dict_name_value.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
-
-    # 输出前 1 个电影
-    show = ''
-    if mv_top:
-        mv_top_name = mv_top[0][0]  # 获取电影名
-        mv_top_value = mv_top[0][1]  # 获取评分
-        show = str(mv_top_name) + ":" + str(mv_top_value) + "分"
-
-    return show
+# def top_mv():
+#     # 1 爬取源
+#     url = "https://movie.douban.com/chart"
+#     header = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
+#                       "Chrome/90.0.4430.93 Safari/537.36 "
+#     }
+#
+#     # 2 发起http请求
+#     spond = requests.get(url, headers=header)
+#     res_text = spond.text
+#     # 3 内容解析
+#     soup = BeautifulSoup(res_text, "html.parser")
+#     soup1 = soup.find_all(width="75")  # 解析出电影名称
+#     # print(soup1[0]['alt'])
+#     soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
+#     # print(soup2[0].text)
+#     # 4数据的处理
+#
+#     """简单处理1，输入数值N，返回排第N的电影名及评分"""
+#
+#     """处理2，将电影名和评分组成[{电影名：评分},{:}]的形式"""
+#     list_name = []  # 将电影名做成一个列表
+#     for i in range(10):
+#         list_name.append(soup1[i]['alt'])
+#
+#     list_value = []  # 将评分值做成一个列表
+#     try:
+#         for i in range(10):
+#             list_value.append(soup2[i].text)
+#     except Exception as E:
+#         print(E)
+#
+#     dict_name_value = dict(zip(list_name, list_value))  # 将两个list转化为字典dict
+#
+#     mv_top = sorted(dict_name_value.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)  # 字典排序,type==list
+#
+#     show = ''
+#     for i in range(0, 1):
+#         mv_top_name = mv_top[i][0]  # 取出电影名,后期直接使用
+#         mv_top_value = mv_top[i][1]  # 取出评分，后期直接使用
+#         show = str(mv_top_name) + ":" + str(mv_top_value) + "分"
+#
+#     return show
 
 
 """
@@ -322,7 +385,7 @@ wea1, temperature1 = get_weather(city1)
 wea2, temperature2 = get_weather(city2)
 
 # 计算到春节的天数
-j_yd, j_cj = get_spr("01-01", "02-17")
+j_yd, j_cj = get_spr(yd, sp)
 # 如果温度过高，提示语
 sid = ""
 if temperature1 >= 23:
@@ -356,21 +419,21 @@ if 24 >= now_time >= 18:
 data = {"m_n_a": {"value": m_n_a, "color": get_random_color()},
         "eat": {"value": eat, "color": get_random_color()},
         "city1": {"value": city1, "color": get_random_color()},
-        "daytime": {"value": get_weekday(), "color": get_random_color()},
+        "daytime": {"value": get_weekday()[0], "color": get_random_color()},
+        "nongli": {"value": get_weekday()[1], "color": get_random_color()},
         "weather1": {"value": wea1, "color": get_random_color()},
-        "temperature1": {"value": str(temperature1) + "℃", "color": get_random_color()},
+        "temperature1": {"value": str(temperature1) + "摄氏度", "color": get_random_color()},
         "sid": {"value": sid, "color": get_random_color()},
+        "birthday_lover": {"value": get_birthday(birthday_lover), "color": get_random_color()},
         "yd": {"value": j_yd, "color": get_random_color()},
         "cj": {"value": j_cj, "color": get_random_color()},
         "city2": {"value": city2, "color": get_random_color()},
         "weather2": {"value": wea2, "color": get_random_color()},
-        "temperature2": {"value": str(temperature2) + "℃", "color": get_random_color()},
+        "temperature2": {"value": str(temperature2) + "摄氏度", "color": get_random_color()},
         "mv": {"value": top_mv(), "color": get_random_color()},
         "words": {"value": get_words(), "color": get_random_color()}
         }
-# "love_days": {"value": get_count(), "color": get_random_color()},
-# "birthday_lover": {"value": get_birthday(birthday_lover), "color": get_random_color()},
-# "birthday_my": {"value": get_birthday(birthday_my), "color": get_random_color()},
+
 """
 4、实例化微信客户端
 """
@@ -385,5 +448,37 @@ wm = WeChatMessage(client)
 # 参数 接收对象、消息模板ID、数据（消息模板里面的的变量与字典数据做匹配）
 for i in range(0, len(user_id1)):
     res = wm.send_template(user_id1[i], template_id, data)
-    # 打印消息发送情况
-    print(res)
+    # print(f"\n消息已推送至ID为{user_id1[i]}的微信用户，推送内容如下：\n"
+    #       f"  {data['m_n_a']['value']}\n"
+    #       f"  {data['eat']['value']}\n"
+    #       f"  所在城市：{data['city1']['value']}\n"
+    #       f"  当前时间：{data['daytime']['value'].strip()}\n"
+    #       f"  农历：{data['nongli']['value'].strip()}\n"
+    #       f"  今日天气：{data['weather1']['value']}\n"
+    #       f"  当前温度：{data['temperature1']['value']}\n"
+    #       f"  {data['sid']['value']}\n"
+    #       f"  距离元旦还有{data['birthday_lover']['value']}天\n"
+    #       f"  距离元旦还有{data['yd']['value']}天\n"
+    #       f"  距离春节还有{data['cj']['value']}天\n"
+    #       # f"  我们已经在一起{data['love_days']['value']}天啦\n"
+    #       f"  ===家乡:{data['city2']['value']} 天气:{data['weather2']['value']} 气温:{data['temperature2']['value']}===\n"
+    #       f"  今日电影新片榜首：{data['mv']['value']}\n"
+    #       f"  每日一句：{data['words']['value'].strip()}\n")
+
+# 模板
+'''
+问候：{{m_n_a.DATA}}
+祝福：{{eat.DATA}}
+所在城市：{{city1.DATA}} 
+当前时间：{{daytime.DATA}} 
+农历：{{nongli.DATA}} 
+今日天气：{{weather1.DATA}} 
+当前温度：{{temperature1.DATA}} 
+注意：{{sid.DATA}}
+距离生日还有{{birthday_lover.DATA}}天
+距离元旦还有{{yd.DATA}}天 
+距离春节还有{{cj.DATA}}天 
+===家乡:{{city2.DATA}} 天气:{{weather2.DATA}} 气温:{{temperature2.DATA}}=== 
+今日电影新片榜首：{{mv.DATA}} 
+每日一句：{{words.DATA}}
+'''
