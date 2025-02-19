@@ -433,3 +433,22 @@ wm = WeChatMessage(client)
 # 参数 接收对象、消息模板ID、数据（消息模板里面的的变量与字典数据做匹配）
 for i in range(0, len(user_id1)):
     res = wm.send_template(user_id1[i], template_id, data)
+
+# 模板
+'''
+=== 记得{{punch.DATA}}哦! ===
+问候：{{m_n_a.DATA}}
+祝福：{{eat.DATA}}
+所在城市：{{city1.DATA}} 
+当前时间：{{daytime.DATA}} 
+农历：{{nongli.DATA}} 
+今日天气：{{weather1.DATA}} 
+当前温度：{{temperature1.DATA}} 
+注意：{{sid.DATA}}
+距离生日还有{{birthday_lover.DATA}}天
+距离元旦还有{{yd.DATA}}天 
+距离春节还有{{cj.DATA}}天 
+=== 家乡:{{city2.DATA}} 天气:{{weather2.DATA}} 气温:{{temperature2.DATA}} === 
+今日电影推荐：{{mv.DATA}} 
+每日一句：{{words.DATA}}
+'''
