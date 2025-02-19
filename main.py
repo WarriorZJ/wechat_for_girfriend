@@ -174,14 +174,22 @@ def number_to_chinese(num):
 def convert_date_to_chinese(nongli_date):
     year_chinese = number_to_chinese(nongli_date.lunar_year)
     month_chinese = number_to_chinese(nongli_date.lunar_month)
-    day_chinese = number_to_chinese(nongli_date.lunar_day)
+    day_chinese = number_to_chinese(nongli_date.lunar_day).replace('零', '十')
 
     # 根据农历月份的特殊情况，处理正月和腊月
-    month_chinese = '正月' if month_chinese == '一' else month_chinese
-    month_chinese = '腊月' if month_chinese == '十二' else month_chinese
-    day_chinese = str(day_chinese).replace('二', '廿') if day_chinese[0] == '二' else day_chinese
+    month_chinese = '正' if month_chinese == '一' else month_chinese
+    month_chinese = '腊' if month_chinese == '十二' else month_chinese
+    day_chinese = str(day_chinese[0]).replace('二', '廿') + day_chinese[1] if day_chinese[0] == '二' and day_chinese[
+        1] != '十' else day_chinese
+    if len(day_chinese) == 1:
+        day_chinese = '初' + str(day_chinese)
+    else:
+        if day_chinese[0] == '一':
+            day_chinese = str(day_chinese[0]).replace('一', '十') + day_chinese[1]
+        else:
+            day_chinese = day_chinese
 
-    return f"{year_chinese}年{month_chinese}{day_chinese}"
+    return f"{year_chinese}年{month_chinese}月{day_chinese}"
 
 
 def get_weekday():
@@ -189,9 +197,10 @@ def get_weekday():
     # 日期时间
     date = (get_beijing_time()).strftime("%Y-%m-%d %X")
     # 农历日期
-    now = str(datetime.now().strftime('%Y-%m-%d')).split("-")
-    year, month, day = int(now[0]), int(now[1]), int(now[2])
-    nongli_date = zhdate.ZhDate.from_datetime(datetime(year, month, day) + timedelta())
+    now = get_beijing_time()
+
+    # 获取农历日期
+    nongli_date = zhdate.ZhDate.from_datetime(now)  # 使用北京时间获取农历日期
     # 获取农历日期的中文大写格式
     nongli_date_chinese = convert_date_to_chinese(nongli_date)
     # 星期fgv
@@ -318,13 +327,20 @@ def top_mv():
     soup1 = soup.find_all(width="75")  # 解析出电影名称
     soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
 
-    # 4. 获取第一部电影及其评分
+    # 4. 获取所有电影名称及评分
     if soup1 and soup2:
-        movie_name = soup1[0].get('alt')  # 获取第一部电影名称
-        rating = soup2[0].text.strip()  # 获取第一部电影评分
+        # 获取所有电影名称和评分
+        movie_names = [s.get('alt') for s in soup1]
+        ratings = [s.text.strip() for s in soup2]
 
-        # 格式化输出
-        if movie_name and rating:
+        # 检查是否有数据
+        if movie_names and ratings:
+            # 随机选择一部电影
+            random_index = random.randint(0, len(movie_names) - 1)
+            movie_name = movie_names[random_index]
+            rating = ratings[random_index]
+
+            # 格式化输出
             return f"《{movie_name}》 {rating} 分"
         else:
             return "获取电影信息失败"
@@ -363,10 +379,10 @@ if 12 > now_time >= 9:
 if 14 > now_time >= 12:
     eat = get_eatmorning_words()
     m_n_a = "中午好吖！"
-if 18 > now_time >= 14:
+if 19 > now_time >= 14:
     eat = get_goodnight_words()
     m_n_a = "下午好吖！"
-if 24 >= now_time >= 18:
+if 24 >= now_time >= 19:
     eat = get_goodnight_words()
     m_n_a = "记得晚上早点睡觉哈，然后做个好梦！"
 
@@ -417,38 +433,3 @@ wm = WeChatMessage(client)
 # 参数 接收对象、消息模板ID、数据（消息模板里面的的变量与字典数据做匹配）
 for i in range(0, len(user_id1)):
     res = wm.send_template(user_id1[i], template_id, data)
-    # print(f"\n消息已推送至ID为{user_id1[i]}的微信用户，推送内容如下：\n"
-    #       f"  {data['m_n_a']['value']}\n"
-    #       f"  {data['eat']['value']}\n"
-    #       f"  所在城市：{data['city1']['value']}\n"
-    #       f"  当前时间：{data['daytime']['value'].strip()}\n"
-    #       f"  农历：{data['nongli']['value'].strip()}\n"
-    #       f"  今日天气：{data['weather1']['value']}\n"
-    #       f"  当前温度：{data['temperature1']['value']}\n"
-    #       f"  {data['sid']['value']}\n"
-    #       f"  距离元旦还有{data['birthday_lover']['value']}天\n"
-    #       f"  距离元旦还有{data['yd']['value']}天\n"
-    #       f"  距离春节还有{data['cj']['value']}天\n"
-    #       # f"  我们已经在一起{data['love_days']['value']}天啦\n"
-    #       f"  ===家乡:{data['city2']['value']} 天气:{data['weather2']['value']} 气温:{data['temperature2']['value']}===\n"
-    #       f"  今日电影新片榜首：{data['mv']['value']}\n"
-    #       f"  每日一句：{data['words']['value'].strip()}\n")
-
-# 模板
-'''
-=== 记得{{punch.DATA}}哦! ===
-问候：{{m_n_a.DATA}}
-祝福：{{eat.DATA}}
-所在城市：{{city1.DATA}} 
-当前时间：{{daytime.DATA}} 
-农历：{{nongli.DATA}} 
-今日天气：{{weather1.DATA}} 
-当前温度：{{temperature1.DATA}} 
-注意：{{sid.DATA}}
-距离生日还有{{birthday_lover.DATA}}天
-距离元旦还有{{yd.DATA}}天 
-距离春节还有{{cj.DATA}}天 
-=== 家乡:{{city2.DATA}} 天气:{{weather2.DATA}} 气温:{{temperature2.DATA}} === 
-今日电影新片榜首：{{mv.DATA}} 
-每日一句：{{words.DATA}}
-'''
