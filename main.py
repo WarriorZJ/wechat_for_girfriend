@@ -214,8 +214,8 @@ def get_goodnight_words():
 
 
 def get_beijing_time():
-    # return datetime.now() + timedelta(hours=8)
-    return datetime.now() + timedelta()
+    return datetime.now() + timedelta(hours=8)
+    # return datetime.now() + timedelta()
 
 
 # 自定义函数：将数字转换为中文
