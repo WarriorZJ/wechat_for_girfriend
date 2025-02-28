@@ -214,8 +214,8 @@ def get_goodnight_words():
 
 
 def get_beijing_time():
-    return datetime.now() + timedelta(hours=8)
-    # return datetime.now() + timedelta()
+    # return datetime.now() + timedelta(hours=8)
+    return datetime.now() + timedelta()
 
 
 # 自定义函数：将数字转换为中文
@@ -281,23 +281,25 @@ def get_weekday():
 
 # 获取天气
 def get_weather(city, api_key='7c75b7045984a1ffc81b7bf751b783c1'):
-    weather = None
-    temperature = None
     url = f"https://restapi.amap.com/v3/weather/weatherInfo?city={city}&key={api_key}"
 
-    # 发送请求
-    response = requests.get(url)
+    try:
+        # 发送请求，设置超时时间
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()  # 检查HTTP响应状态码
 
-    # 检查响应是否成功
-    if response.status_code == 200:
         data = response.json()
 
         # 判断API返回的状态
-        if data['status'] == '1':  # 状态为1表示成功
-            # 获取实况天气信息
-            weather_info = data['lives'][0]  # 由于返回的lives是一个列表，我们取第一个元素
-            weather = weather_info['weather']
-            temperature = int(weather_info['temperature'])
+        if data.get('status') == '1' and 'lives' in data and data['lives']:
+            weather_info = data['lives'][0]  # 取第一个天气信息
+            weather = weather_info.get('weather', '微风轻拂')
+            temperature = int(weather_info.get('temperature', 28))
+        else:
+            weather, temperature = "微风轻拂", 28
+
+    except (requests.RequestException, ValueError, KeyError):
+        weather, temperature = "微风轻拂", 28
 
     return weather, temperature
 
@@ -347,18 +349,39 @@ def get_spr(yd, sp):
 
 # 每日金句
 def get_words():
-    words = requests.get("https://api.shadiao.pro/chp")
-    if words.status_code != 200:
-        return get_words()
+    words_list = [
+        "我的世界，因你而暖。",
+        "愿陪你走过每个春夏秋冬。",
+        "星光不及你眼眸温柔。",
+        "遇见你，是我最大的幸运。",
+        "每天都想和你腻在一起。",
+        "有你在，生活才浪漫。",
+        "爱你，从未改变。",
+        "风再大，也吹不走我的思念。",
+        "牵着你的手，一生不放开。",
+        "你是我心头的朱砂痣。",
+        "一想到你，嘴角就会不自觉上扬。",
+        "余生很长，我只想陪你慢慢走。",
+        "夜空再美，不及你的笑颜。",
+        "我的世界，只有你最耀眼。",
+        "你是我生命里最美的风景。",
+        "思念如影随形，一刻也不曾停。",
+        "你的名字，是我心中最温柔的诗。",
+        "每天醒来，第一件事就是想你。",
+        "爱你，从晨曦到暮色四合。",
+        "我的心里，住着一个可爱的你。"
+    ]
+    try:
+        response = requests.get("https://api.shadiao.pro/chp", timeout=5)  # 设置超时时间
+        response.raise_for_status()  # 如果状态码不是 200，会抛出 HTTPError
+        text = response.json().get('data', {}).get('text', '')
 
-    # 获取返回的文本
-    text = words.json()['data']['text']
-
-    # 如果文本的长度大于20个字，重新请求
-    if len(text) > 20:
-        return get_words()
-
-    return text
+        # 如果文本的长度大于 20 个字，则重新请求
+        if len(text) > 20:
+            return get_words()
+        return text
+    except (requests.RequestException, ValueError):  # 捕获请求异常和 JSON 解析异常
+        return random.choice(words_list)  # 返回备用句子
 
 
 # 字体颜色，随机 每次不一样
@@ -370,39 +393,37 @@ def get_random_color():
 def top_mv():
     # 1. 爬取源
     url = "https://movie.douban.com/chart"  # 豆瓣新片榜的 URL
-    header = {
+    headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/90.0.4430.93 Safari/537.36"
     }
 
-    # 2. 发起 HTTP 请求
-    spond = requests.get(url, headers=header)
-    res_text = spond.text
+    try:
+        # 2. 发起 HTTP 请求
+        response = requests.get(url, headers=headers, timeout=5)  # 设置超时
+        response.raise_for_status()  # 检查 HTTP 响应状态码
+        res_text = response.text
 
-    # 3. 内容解析
-    soup = BeautifulSoup(res_text, "html.parser")
-    soup1 = soup.find_all(width="75")  # 解析出电影名称
-    soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
+        # 3. 内容解析
+        soup = BeautifulSoup(res_text, "html.parser")
+        soup1 = soup.find_all(width="75")  # 解析出电影名称
+        soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
 
-    # 4. 获取所有电影名称及评分
-    if soup1 and soup2:
-        # 获取所有电影名称和评分
-        movie_names = [s.get('alt') for s in soup1]
-        ratings = [s.text.strip() for s in soup2]
+        # 4. 获取所有电影名称及评分
+        if soup1 and soup2:
+            movie_names = [s.get('alt') for s in soup1]
+            ratings = [s.text.strip() for s in soup2]
 
-        # 检查是否有数据
-        if movie_names and ratings:
-            # 随机选择一部电影
-            random_index = random.randint(0, len(movie_names) - 1)
-            movie_name = movie_names[random_index]
-            rating = ratings[random_index]
+            if movie_names and ratings:
+                random_index = random.randint(0, len(movie_names) - 1)
+                movie_name = movie_names[random_index]
+                rating = ratings[random_index]
+                return f"《{movie_name}》 {rating} 分"
 
-            # 格式化输出
-            return f"《{movie_name}》 {rating} 分"
-        else:
-            return "获取电影信息失败"
-    else:
         return "无法解析电影榜单"
+
+    except (requests.RequestException, ValueError):
+        return "网络连接出现了一些小问题"
 
 
 """
@@ -490,6 +511,22 @@ wm = WeChatMessage(client)
 # 参数 接收对象、消息模板ID、数据（消息模板里面的的变量与字典数据做匹配）
 for i in range(0, len(user_id1)):
     res = wm.send_template(user_id1[i], template_id, data)
+    print(f"\n消息已推送至ID为{user_id1[i]}的微信用户，推送内容如下：\n"
+          f"  {data['m_n_a']['value']}\n"
+          f"  {data['eat']['value']}\n"
+          f"  所在城市：{data['city1']['value']}\n"
+          f"  当前时间：{data['daytime']['value'].strip()}\n"
+          f"  农历：{data['nongli']['value'].strip()}\n"
+          f"  今日天气：{data['weather1']['value']}\n"
+          f"  当前温度：{data['temperature1']['value']}\n"
+          f"  {data['sid']['value']}\n"
+          f"  距离元旦还有{data['birthday_lover']['value']}天\n"
+          f"  距离元旦还有{data['yd']['value']}天\n"
+          f"  距离春节还有{data['cj']['value']}天\n"
+          # f"  我们已经在一起{data['love_days']['value']}天啦\n"
+          f"  ===家乡:{data['city2']['value']} 天气:{data['weather2']['value']} 气温:{data['temperature2']['value']}===\n"
+          f"  今日电影推荐：{data['mv']['value']}\n"
+          f"  每日一句：{data['words']['value'].strip()}\n")
 
 # 模板
 '''
