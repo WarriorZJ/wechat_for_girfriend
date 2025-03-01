@@ -236,8 +236,6 @@ def convert_date_to_chinese(nongli_date):
     # 根据农历月份的特殊情况，处理正月和腊月
     month_chinese = '正' if month_chinese == '一' else month_chinese
     month_chinese = '腊' if month_chinese == '十二' else month_chinese
-    # day_chinese = str(day_chinese[0]).replace('二', '廿') + day_chinese[1] if day_chinese[0] == '二' and day_chinese[
-    #     1] != '十' else day_chinese
     if len(day_chinese) == 2 and day_chinese[0] == '二':
         day_chinese = str(day_chinese[0]).replace('二', '廿') + day_chinese[1]
     elif len(day_chinese) == 1:
@@ -264,7 +262,7 @@ def get_weekday():
     nongli_date = zhdate.ZhDate.from_datetime(now)  # 使用北京时间获取农历日期
     # 获取农历日期的中文大写格式
     nongli_date_chinese = convert_date_to_chinese(nongli_date)
-    # 星期fgv
+    # 星期
     dayOfWeek = (get_beijing_time()).weekday()
     if dayOfWeek == 0:
         weekd = date + "  星期一"
@@ -395,36 +393,39 @@ def get_random_color():
 
 # 电影
 def top_mv():
-    url = "https://movie.douban.com/chart"
+    # 1. 爬取源
+    url = "https://movie.douban.com/chart"  # 豆瓣新片榜的 URL
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/90.0.4430.93 Safari/537.36"
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
+        # 2. 发起 HTTP 请求
+        response = requests.get(url, headers=headers, timeout=5)  # 设置超时
+        response.raise_for_status()  # 检查 HTTP 响应状态码
         res_text = response.text
 
+        # 3. 内容解析
         soup = BeautifulSoup(res_text, "html.parser")
-        soup1 = soup.find_all(width="75")
-        soup2 = soup.find_all('span', class_="rating_nums")
+        soup1 = soup.find_all(width="75")  # 解析出电影名称
+        soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
 
-        movie_names = [s.get('alt') for s in soup1 if s.get('alt')]
-        ratings = [s.text.strip() for s in soup2]
+        # 4. 获取所有电影名称及评分
+        if soup1 and soup2:
+            movie_names = [s.get('alt') for s in soup1]
+            ratings = [s.text.strip() for s in soup2]
 
-        # 额外检查数据是否匹配
-        if not movie_names or not ratings:
-            return "无法解析电影榜单"
+            if movie_names and ratings:
+                random_index = random.randint(0, len(movie_names) - 1)
+                movie_name = movie_names[random_index]
+                rating = ratings[random_index]
+                return f"《{movie_name}》 {rating} 分"
 
-        # 取最小长度，防止 `movie_names` 和 `ratings` 数量不匹配
-        min_len = min(len(movie_names), len(ratings))
-        random_index = random.randint(0, min_len - 1)
+        return "无法解析电影榜单"
 
-        return f"《{movie_names[random_index]}》 {ratings[random_index]} 分"
-
-    except (requests.RequestException, ValueError) as e:
-        return f"网络连接或解析出错: {e}"
+    except (requests.RequestException, ValueError):
+        return "网络连接出现了一些小问题"
 
 
 """
