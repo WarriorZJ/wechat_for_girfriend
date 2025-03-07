@@ -295,13 +295,13 @@ def get_weather(city, api_key='7c75b7045984a1ffc81b7bf751b783c1'):
         # 判断API返回的状态
         if data.get('status') == '1' and 'lives' in data and data['lives']:
             weather_info = data['lives'][0]  # 取第一个天气信息
-            weather = weather_info.get('weather', '微风轻拂')
+            weather = weather_info.get('weather', '微风')
             temperature = int(weather_info.get('temperature', 28))
         else:
-            weather, temperature = "微风轻拂", 28
+            weather, temperature = "微风", 28
 
     except (requests.RequestException, ValueError, KeyError):
-        weather, temperature = "微风轻拂", 28
+        weather, temperature = "微风", 28
 
     return weather, temperature
 
@@ -394,38 +394,37 @@ def get_random_color():
 # 电影
 def top_mv():
     # 1. 爬取源
-    url = "https://movie.douban.com/chart"  # 豆瓣新片榜的 URL
+    url = "https://www.maoyan.com/films?showType=3"  # 猫眼电影热映榜的 URL
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "Chrome/90.0.4430.93 Safari/537.36"
     }
 
-    try:
-        # 2. 发起 HTTP 请求
-        response = requests.get(url, headers=headers, timeout=5)  # 设置超时
-        response.raise_for_status()  # 检查 HTTP 响应状态码
-        res_text = response.text
+    # 2. 发起 HTTP 请求
+    response = requests.get(url, headers=headers, timeout=5)
+    response.raise_for_status()
+    res_text = response.text
 
-        # 3. 内容解析
-        soup = BeautifulSoup(res_text, "html.parser")
-        soup1 = soup.find_all(width="75")  # 解析出电影名称
-        soup2 = soup.find_all('span', class_="rating_nums")  # 解析出评分
+    # 3. 内容解析
+    soup = BeautifulSoup(res_text, "html.parser")
+    movies = soup.find_all('div', class_="movie-item-hover")
 
-        # 4. 获取所有电影名称及评分
-        if soup1 and soup2:
-            movie_names = [s.get('alt') for s in soup1]
-            ratings = [s.text.strip() for s in soup2]
+    # 4. 获取电影信息
+    movie_list = []
+    for movie in movies:
+        name_tag = movie.find('span', class_="name")
+        rating_tag = movie.find('span', class_="score")
+        name = name_tag.text.strip() if name_tag else "未知电影"
+        rating = rating_tag.text.strip() if rating_tag else "暂无评分"
+        movie_list.append((name, rating))
 
-            if movie_names and ratings:
-                random_index = random.randint(0, len(movie_names) - 1)
-                movie_name = movie_names[random_index]
-                rating = ratings[random_index]
-                return f"《{movie_name}》 {rating} 分"
-
-        return "无法解析电影榜单"
-
-    except (requests.RequestException, ValueError):
-        return "网络连接出现了一些小问题"
+    # 5. 随机选择一部电影
+    if movie_list:
+        random_index = random.randint(0, len(movie_list) - 1)
+        movie_name, rating = movie_list[random_index]
+        return f"《{movie_name}》 {rating} 分"
+    else:
+        return "暂时无法获取电影信息"
 
 
 """
