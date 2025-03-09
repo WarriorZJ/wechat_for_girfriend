@@ -231,7 +231,7 @@ def number_to_chinese(num):
 def convert_date_to_chinese(nongli_date):
     year_chinese = number_to_chinese(nongli_date.lunar_year)
     month_chinese = number_to_chinese(nongli_date.lunar_month)
-    day_chinese = number_to_chinese(nongli_date.lunar_day).replace('零', '十')
+    day_chinese = number_to_chinese(nongli_date.lunar_day).replace('一零', '十').replace('零', '十')
 
     # 根据农历月份的特殊情况，处理正月和腊月
     month_chinese = '正' if month_chinese == '一' else month_chinese
