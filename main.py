@@ -494,6 +494,7 @@ data = {"m_n_a": {"value": m_n_a, "color": get_random_color()},
         "weather2": {"value": wea2, "color": get_random_color()},
         "temperature2": {"value": str(temperature2) + "摄氏度", "color": get_random_color()},
         "mv": {"value": top_mv(), "color": get_random_color()},
+        "love_days": {"value": get_count(), "color": get_random_color()},
         "words": {"value": get_words(), "color": get_random_color()},
         "punch": {"value": check_time(), "color": get_random_color()}
         }
@@ -524,7 +525,7 @@ for i in range(0, len(user_id1)):
           f"  距离生日还有{data['birthday_lover']['value']}天\n"
           f"  距离元旦还有{data['yd']['value']}天\n"
           f"  距离春节还有{data['cj']['value']}天\n"
-          # f"  我们已经在一起{data['love_days']['value']}天啦\n"
+          f"  我们已经在一起{data['love_days']['value']}天啦\n"
           f"  ===家乡:{data['city2']['value']} 天气:{data['weather2']['value']} 气温:{data['temperature2']['value']}===\n"
           f"  今日电影推荐：{data['mv']['value']}\n"
           f"  每日一句：{data['words']['value'].strip()}\n")
@@ -545,5 +546,6 @@ for i in range(0, len(user_id1)):
 距离春节还有{{cj.DATA}}天 
 === 家乡:{{city2.DATA}} 天气:{{weather2.DATA}} 气温:{{temperature2.DATA}} === 
 今日电影推荐：{{mv.DATA}} 
+今天是我们在一起的第{{love_days.DATA}}天！
 每日一句：{{words.DATA}}
 '''
