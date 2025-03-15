@@ -309,7 +309,7 @@ def get_weather(city, api_key='7c75b7045984a1ffc81b7bf751b783c1'):
 # 计算在一起的日期
 def get_count():
     delta = get_beijing_time() - datetime.strptime(start_date, "%Y-%m-%d")
-    return delta.days
+    return delta.days + 1
 
 
 # 计算距离下一次生日多少天
