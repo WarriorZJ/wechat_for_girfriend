@@ -393,41 +393,27 @@ def get_random_color():
 
 # 电影
 def top_mv():
-    # 1. 爬取源
-    url = "https://www.maoyan.com/films?showType=3"  # 猫眼电影热映榜的 URL
+    url = "https://movie.douban.com/chart"  # 评分榜
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/90.0.4430.93 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
-    try:
-        # 2. 发起 HTTP 请求
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
-        res_text = response.text
-    
-        # 3. 内容解析
-        soup = BeautifulSoup(res_text, "html.parser")
-        movies = soup.find_all('div', class_="movie-item-hover")
-    
-        # 4. 获取电影信息
-        movie_list = []
-        for movie in movies:
-            name_tag = movie.find('span', class_="name")
-            rating_tag = movie.find('span', class_="score")
-            name = name_tag.text.strip() if name_tag else "未知电影"
-            rating = rating_tag.text.strip() if rating_tag else "暂无评分"
-            movie_list.append((name, rating))
-    
-        # 5. 随机选择一部电影
-        if movie_list:
-            random_index = random.randint(0, len(movie_list) - 1)
-            movie_name, rating = movie_list[random_index]
-            return f"《{movie_name}》 {rating} 分"
-        else:
-            return "暂时无法获取电影信息"
-    except Exception as e:
-        print("获取电影信息失败：", e)
-        return "暂无"
+    res = requests.get(url, headers=headers, timeout=5)
+    res.raise_for_status()
+    soup = BeautifulSoup(res.text, "html.parser")
+    items = soup.select('.pl2')
+
+    movie_list = []
+    for item in items:
+        name = item.a.text.strip().replace("\n", "")
+        rating = item.find_next('span', class_='rating_nums')
+        score = rating.text.strip() if rating else "暂无评分"
+        movie_list.append((name, score))
+
+    if movie_list:
+        movie_name, rating = random.choice(movie_list)
+        return f"《{movie_name}》 {rating} 分"
+    else:
+        return "暂时无法获取电影信息"
 
 
 """
