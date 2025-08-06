@@ -411,7 +411,7 @@ def top_mv():
 
     if movie_list:
         movie_name, rating = random.choice(movie_list)
-        return f"《{movie_name}》 {rating} 分"
+        return f"《{movie_name}》{rating} 分"
     else:
         return "暂时无法获取电影信息"
 
