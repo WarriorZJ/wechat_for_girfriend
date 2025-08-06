@@ -404,7 +404,9 @@ def top_mv():
 
     movie_list = []
     for item in items:
-        name = item.a.text.strip().replace("\n", "")
+        full_title = item.a.get_text(strip=True)
+        # 提取第一个 "/" 前的主标题部分
+        name = full_title.split('/')[0].strip()
         rating = item.find_next('span', class_='rating_nums')
         score = rating.text.strip() if rating else "暂无评分"
         movie_list.append((name, score))
