@@ -393,19 +393,50 @@ def get_random_color():
 
 # 电影
 def top_mv():
-    url = "https://movie.douban.com/chart"  # 评分榜
+    url = "https://movie.douban.com/chart"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/127.0.0.0 Safari/537.36"
+        ),
+        "Referer": "https://movie.douban.com/",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Cookie": (
+            "bid=gBOB68qc6u4; "
+            "_pk_id.100001.4cf6=a839b0f6b22f3b72.1754645362.; "
+            "_pk_ses.100001.4cf6=1; ap_v=0,6.0; "
+            "__utma=30149280.695913436.1754645363.1754645363.1754645363.1; "
+            "__utmb=30149280.0.10.1754645363; __utmc=30149280; "
+            "__utmz=30149280.1754645363.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); "
+            "__utma=223695111.1773430490.1754645363.1754645363.1754645363.1; "
+            "__utmc=223695111; "
+            "__utmz=223695111.1754645363.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); "
+            "__utmt=1; __utmb=223695111.1.10.1754645363"
+        )
     }
-    res = requests.get(url, headers=headers, timeout=5)
-    res.raise_for_status()
+
+    # 随机延时，降低被反爬概率
+    time.sleep(random.uniform(1, 3))
+
+    for attempt in range(3):
+        try:
+            res = requests.get(url, headers=headers, timeout=5)
+            if res.status_code == 200:
+                break
+            else:
+                time.sleep(2)
+        except requests.RequestException:
+            time.sleep(2)
+    else:
+        return "暂时无法获取电影信息"
+
     soup = BeautifulSoup(res.text, "html.parser")
     items = soup.select('.pl2')
 
     movie_list = []
     for item in items:
         full_title = item.a.get_text(strip=True)
-        # 提取第一个 "/" 前的主标题部分
         name = full_title.split('/')[0].strip()
         rating = item.find_next('span', class_='rating_nums')
         score = rating.text.strip() if rating else "暂无评分"
